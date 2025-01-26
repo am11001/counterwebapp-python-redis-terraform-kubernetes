@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greetings
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: greetings
+  template:
+    metadata:
+      labels:
+        app: greetings
+    spec:
+      nodeSelector:
+        agentpool: frontendpool
+      containers:
+      - name: greetings
+        image: <your docker image location >
+        imagePullPolicy: Always
+        env:
+        - name: NAME
+          valueFrom:
+            configMapKeyRef:
+              name: greetings
+              key: NAME
+        - name: REDIS_PASS
+          valueFrom:
+            secretKeyRef:
+              name: greetings-secret
+              key: redisPassword
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 8080
+      imagePullSecrets:
+      - name: greetingsacr
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: greetings
+spec:
+  selector:
+    app: greetings
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
